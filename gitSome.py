@@ -120,13 +120,12 @@ Examples:
 			results = start_from_account(args.user,args.forks,args.proxy,args.token,args.fireprox,args.exclude)
 		else:
 			results = start_from_repo(args.repo,args.proxy,args.fireprox)
+		if args.json:
+			print(results)
+		else:
+			[print(result) for result in (set([result.get("email") for result in results if result.get("email")]))]
 	except RateLimited:
 		print("Rate Limited :(")
-		sys.exit()
 	except NotFound:
 		print("Not found.")
-		sys.exit()
-	if args.json:
-		print(results)
-	else:
-		[print(result) for result in (set([result.get("email") for result in results if result.get("email")]))]
+	
