@@ -40,4 +40,5 @@ gitSome extracts email, name, and user information from GitHub repo commits.
 ## Disclaimer
 
 The power is yours and so is the responsibility to understand GitHub API policies :)
+
 ![The Power is Yours](https://media.tenor.com/YMAt_1_FryQAAAAC/captain-planet-planet.gif)
