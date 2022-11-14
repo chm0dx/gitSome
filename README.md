@@ -1,6 +1,6 @@
 # gitSome
 
-gitSome analyzes GitHub repo commits and extracts email, name, and user information.
+gitSome extracts email, name, and user information from GitHub repo commits.
 
 ## Install
 
