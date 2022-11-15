@@ -45,10 +45,12 @@ def process_repo(repo):
 	return results
 
 
-def start_from_repo(repo,proxy,fireprox):
+def start_from_repo(repo,proxy,fireprox,token):
 	if fireprox:
 		global base_url
 		base_url = fireprox
+	if token:
+		headers["Authorization"] = f"token {token}"
 	proxies["https"] = proxy
 	results = []
 	results.extend(process_repo(repo))
@@ -56,7 +58,7 @@ def start_from_repo(repo,proxy,fireprox):
 	return sorted(results, key=lambda result: result["repo"], reverse=True)
 
 
-def start_from_account(account,forks,proxy,token,fireprox,exclusions):
+def start_from_account(account,forks,proxy,fireprox,token,exclusions):
 	if fireprox:
 		global base_url
 		base_url = fireprox
@@ -68,8 +70,6 @@ def start_from_account(account,forks,proxy,token,fireprox,exclusions):
 	while True:
 		if account:
 			repos_url = f"{base_url}users/{account}/repos?per_page=100&page={page}"
-		else:
-			repos_url = f"{base_url}user/repos?per_page=100&page={page}"
 		repos = requests.get(repos_url,proxies=proxies, headers=headers).json()
 
 		if isinstance(repos,dict) and "API rate limit exceeded" in repos.get("message"):
@@ -91,11 +91,13 @@ def start_from_account(account,forks,proxy,token,fireprox,exclusions):
 	return sorted(results, key=lambda result: result["repo"], reverse=True)
 
 
-def start_from_domain(domain,proxy,fireprox):
+def start_from_domain(domain,proxy,fireprox,token):
 	headers["Accept"] = "application/vnd.github.text-match+json"
 	if fireprox:
 		global base_url
 		base_url = fireprox
+	if token:
+		headers["Authorization"] = f"token {token}"
 	proxies["https"] = proxy
 	results = []
 	page = 1
@@ -142,7 +144,7 @@ Examples:
   python3 gitSome.py -u orgName
   python3 gitSome.py -u userName -f
   python3 gitSome.py -r userName/repoName -p http://0.0.0.0:8080
-  python3 gitSome.py -t github_pat_xxx -r excluded/repo -r excluded_account
+  python3 gitSome.py -u orgName -t github_pat_xxx -r excluded/repo -r excluded_account
   python3 gitSome.py -u user -fp fireprox_url
 
 
@@ -152,7 +154,7 @@ Examples:
 	reqs.add_argument("-d","--domain",help="Search public commits, issues, and users for emails belonging to the provied domain")
 	reqs.add_argument("-u","--user",help="Search repos of the provided GitHub user (or org) account")
 	reqs.add_argument("-r","--repo",help="Search the provied GitHub repo")
-	reqs.add_argument("-t","--token",help="Search the repos associated with the provided GitHub personal access token")
+	parser.add_argument("-t","--token",help="Increase rate limit and authenticate searches using the given GitHub personal access token")
 	parser.add_argument("-f","--forks",help="Include commits from forked repos",action="store_true")
 	parser.add_argument("-p","--proxy",help="Send requests through a web or SOCKS proxy")
 	parser.add_argument("-fp","--fireprox",help="Rewrite request URLs to use a FireProx endpoint")
@@ -162,22 +164,22 @@ Examples:
 	args = parser.parse_args()
 
 	try:
-		if args.user or args.token:
-			results = start_from_account(args.user,args.forks,args.proxy,args.token,args.fireprox,args.exclude)
+		if args.user:
+			results = start_from_account(args.user,args.forks,args.proxy,args.fireprox,args.token,args.exclude)
 		elif args.domain:
-			results = start_from_domain(args.domain,args.proxy,args.fireprox)
+			results = start_from_domain(args.domain,args.proxy,args.fireprox,args.token)
 		else:
-			results = start_from_repo(args.repo,args.proxy,args.fireprox)
+			results = start_from_repo(args.repo,args.proxy,args.fireprox,args.token)
 		
 		if len(results) == 0:
-			print("Didn't find anything")
+			print("Didn't find any results in public data.")
 		elif args.json:
 			print(results)
 		else:
 			emails = [result for result in (set([result.get("email") for result in results if result.get("email")]))]
 			[print(email) for email in sorted(emails, key=lambda x: x.split("@")[-1])]
 	except RateLimited:
-		print("Rate Limited :(")
+		print("Rate Limited :( Wait, connect to a different network, or provide a proxy.")
 	except NotFound:
-		print("Not found.")
+		print("Couldn't find the starting object. Check that the user/org/repo exists.")
 	

@@ -21,7 +21,7 @@ gitSome extract email addresses and other info from various GitHub sources
       -u USER, --user USER  Search repos of the provided GitHub user (or org) account
       -r REPO, --repo REPO  Search the provied GitHub repo
       -t TOKEN, --token TOKEN
-                            Search the repos associated with the provided GitHub personal access token
+                            Increase rate limit and authenticate searches using the given GitHub personal access token
       -f, --forks           Include commits from forked repos
       -p PROXY, --proxy PROXY
                             Send requests through a web or SOCKS proxy
@@ -36,7 +36,7 @@ gitSome extract email addresses and other info from various GitHub sources
       python3 gitSome.py -u orgName
       python3 gitSome.py -u userName -f
       python3 gitSome.py -r userName/repoName -p http://0.0.0.0:8080
-      python3 gitSome.py -t github_pat_xxx -r excluded/repo -r excluded_account
+      python3 gitSome.py -u orgName -t github_pat_xxx -r excluded/repo -r excluded_account
       python3 gitSome.py -u user -fp fireprox_url
 
 ## Disclaimer
