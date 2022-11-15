@@ -21,7 +21,7 @@ gitSome extract email addresses and other info from various GitHub sources
       -u USER, --user USER  Search repos belonging to a given GitHub user (or org) account
       -r REPO, --repo REPO  Search the given GitHub repo
       -t TOKEN, --token TOKEN
-                            Search repos accessible by a given GitHub personal access token
+                            Increase rate limit and authenticate searches using the given GitHub personal access token
       -f, --forks           Include commits from forked repos (might take a while and return many irrelevant results)
       -p PROXY, --proxy PROXY
                             Send requests through a given web or SOCKS proxy
