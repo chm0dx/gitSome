@@ -17,16 +17,16 @@ gitSome extract email addresses and other info from various GitHub sources
     optional arguments:
       -h, --help            show this help message and exit
       -d DOMAIN, --domain DOMAIN
-                            Search public commits, issues, and users for emails belonging to the provied domain
-      -u USER, --user USER  Search repos of the provided GitHub user (or org) account
-      -r REPO, --repo REPO  Search the provied GitHub repo
+                            Search public commits, issues, and users for emails belonging to a given domain
+      -u USER, --user USER  Search repos belonging to a given GitHub user (or org) account
+      -r REPO, --repo REPO  Search the given GitHub repo
       -t TOKEN, --token TOKEN
                             Increase rate limit and authenticate searches using the given GitHub personal access token
-      -f, --forks           Include commits from forked repos
+      -f, --forks           Include commits from forked repos (might take a while and return many irrelevant results)
       -p PROXY, --proxy PROXY
-                            Send requests through a web or SOCKS proxy
+                            Send requests through a given web or SOCKS proxy
       -fp FIREPROX, --fireprox FIREPROX
-                            Rewrite request URLs to use a FireProx endpoint
+                            Rewrite request URLs to use the given FireProx endpoint
       -j, --json            Return full json results (as opposed to just the plaintext email)
       -e EXCLUDE, --exclude EXCLUDE
                             The name of a repo or account to exclude
