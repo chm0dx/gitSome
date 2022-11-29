@@ -116,15 +116,15 @@ def start_from_domain(domain,proxy,fireprox,token):
 				if search_field == "users":
 					user_page_url = f'{base_url}users/{search_result["login"]}'
 					user_page = requests.get(search_url,proxies=proxies, headers=headers).json()
-					for email in re.findall(rf"([A-Za-z0-9+.]+@[\w]*{domain})",match["fragment"]):
-							result = {"email":email,"source":search_result["html_url"]}
+					for email in re.findall(rf"((?<!\\)[A-Za-z0-9+.]+@[\w]*{domain})",match["fragment"]):
+							result = {"email":email.lower(),"source":search_result["html_url"]}
 							if result not in results:
 								results.append(result)
 
 				else:
 					for match in search_result["text_matches"]:
-						for email in re.findall(rf"([A-Za-z0-9+.]+@[\w]*{domain})",match["fragment"]):
-							result = {"email":email,"source":search_result["html_url"]}
+						for email in re.findall(rf"((?<!\\)[A-Za-z0-9+.]+@[\w]*{domain})",match["fragment"]):
+							result = {"email":email.lower(),"source":search_result["html_url"]}
 							if result not in results:
 								results.append(result)
 			if len(search_results) == 100:
