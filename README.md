@@ -4,9 +4,9 @@
 
 OSINT tool to extract email addresses and other useful info from various GitHub sources.
 
- * Provide a user account to extract email addresses associated repos
- * Provide an org account to extract email addresses associated repos
- * Provide a domain to extract related email addresses from public commits, issues, and other sources
+ * Provide a user account to extract emails from associated repos
+ * Provide an org account to extract emails from associated repos
+ * Provide a domain to extract related emails from public commits, issues, and other sources
  * Built-in FireProx to automatically create endpoints, rotate source IP, and cleanup at the end
     * Forked and modified ([chm0dx/fireprox](https://github.com/chm0dx/fireprox)) from the awesome [ustayready/fireprox](https://github.com/ustayready/fireprox)
 
