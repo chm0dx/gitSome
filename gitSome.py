@@ -1,7 +1,9 @@
 import argparse
-from argparse import RawTextHelpFormatter
-import requests
+import random
 import re
+import requests
+
+from fireprox import fire
 
 proxies = {"https":""}
 auth_token = None
@@ -12,6 +14,9 @@ class RateLimited(Exception):
 	pass
 
 class NotFound(Exception):
+	pass
+
+class IncompleteKeys(Exception):
 	pass
 
 def process_repo(repo):
@@ -45,10 +50,7 @@ def process_repo(repo):
 	return results
 
 
-def start_from_repo(repo,proxy,fireprox,token):
-	if fireprox:
-		global base_url
-		base_url = fireprox
+def start_from_repo(repo,proxy,token):
 	if token:
 		headers["Authorization"] = f"token {token}"
 	proxies["https"] = proxy
@@ -58,10 +60,7 @@ def start_from_repo(repo,proxy,fireprox,token):
 	return sorted(results, key=lambda result: result["repo"], reverse=True)
 
 
-def start_from_account(account,forks,proxy,fireprox,token,exclusions):
-	if fireprox:
-		global base_url
-		base_url = fireprox
+def start_from_account(account,forks,proxy,token,exclusions):
 	if token:
 		headers["Authorization"] = f"token {token}"
 	proxies["https"] = proxy
@@ -91,11 +90,8 @@ def start_from_account(account,forks,proxy,fireprox,token,exclusions):
 	return sorted(results, key=lambda result: result["repo"], reverse=True)
 
 
-def start_from_domain(domain,proxy,fireprox,token):
+def start_from_domain(domain,proxy,token):
 	headers["Accept"] = "application/vnd.github.text-match+json"
-	if fireprox:
-		global base_url
-		base_url = fireprox
 	if token:
 		headers["Authorization"] = f"token {token}"
 	proxies["https"] = proxy
@@ -120,7 +116,6 @@ def start_from_domain(domain,proxy,fireprox,token):
 							result = {"email":email.lower(),"source":search_result["html_url"]}
 							if result not in results:
 								results.append(result)
-
 				else:
 					for match in search_result["text_matches"]:
 						for email in re.findall(rf"((?<!\\)[A-Za-z0-9+.]+@[\w]*{domain})",match["fragment"]):
@@ -131,7 +126,6 @@ def start_from_domain(domain,proxy,fireprox,token):
 				page +1
 			else:
 				break
-
 	page = 1
 	return results
 
@@ -145,31 +139,44 @@ Examples:
   python3 gitSome.py -u userName -f
   python3 gitSome.py -r userName/repoName -p http://0.0.0.0:8080
   python3 gitSome.py -u orgName -t github_pat_xxx -r excluded/repo -r excluded_account
-  python3 gitSome.py -u user -fp fireprox_url
+  python3 gitSome.py -u user --fireprox
+  python3 gitSome.py -d hooli.com --fireprox --access_key xxxx --secret_access_key xxxx --region us-west-2
 
 
 ''',
-		formatter_class=RawTextHelpFormatter)
+	formatter_class=argparse.RawTextHelpFormatter)
 	reqs = parser.add_mutually_exclusive_group(required=True)
-	reqs.add_argument("-d","--domain",help="Search public commits, issues, and users for emails belonging to the provied domain")
-	reqs.add_argument("-u","--user",help="Search repos of the provided GitHub user (or org) account")
-	reqs.add_argument("-r","--repo",help="Search the provied GitHub repo")
-	parser.add_argument("-t","--token",help="Increase rate limit and authenticate searches using the given GitHub personal access token")
-	parser.add_argument("-f","--forks",help="Include commits from forked repos",action="store_true")
-	parser.add_argument("-p","--proxy",help="Send requests through a web or SOCKS proxy")
-	parser.add_argument("-fp","--fireprox",help="Rewrite request URLs to use a FireProx endpoint")
-	parser.add_argument("-j","--json",help="Return full json results (as opposed to just the plaintext email)", action="store_true")
-	parser.add_argument("-e","--exclude",help="The name of a repo or account to exclude", action="append", default=[])
-	
+	reqs.add_argument("-d","--domain", help="Search public commits, issues, and users for emails belonging to the provied domain.")
+	reqs.add_argument("-u","--user", help="Search repos of the provided GitHub user (or org) account.")
+	reqs.add_argument("-r","--repo", help="Search the provided GitHub repo.")
+	parser.add_argument("-t","--token", help="Authenticate searches using the given GitHub personal access token to increase rate limit and search private resources.")
+	parser.add_argument("-f","--forks", help="Include commits from forked repos.", action="store_true")
+	parser.add_argument("-p","--proxy", help="Send requests through a web or SOCKS proxy.")
+	parser.add_argument("-j","--json", help="Return full json results (as opposed to just the plaintext email).", action="store_true")
+	parser.add_argument("-e","--exclude", help="The name of a repo or account to exclude.", action="append", default=[])
+	parser.add_argument("-fp","--fireprox", help="Auto configure and use a FireProx endpoint. Pass in credentials or use the ~/.aws/credentials file.", action="store_true")
+	parser.add_argument("--secret_access_key", required=False, help="The secret access key used to create FireProx resources in AWS.")
+	parser.add_argument("--access_key", required=False, help="The access key used to create FireProx resources in AWS.")
+	parser.add_argument("--region", required=False, help="The AWS region to create FireProx resources in.")
 	args = parser.parse_args()
+	if not args.access_key and args.secret_access_key:
+		raise IncompleteKeys()
 
 	try:
-		if args.user:
-			results = start_from_account(args.user,args.forks,args.proxy,args.fireprox,args.token,args.exclude)
-		elif args.domain:
-			results = start_from_domain(args.domain,args.proxy,args.fireprox,args.token)
+		if args.fireprox:
+			fp = fire.FireProx(access_key=args.access_key, secret_access_key=args.secret_access_key, region=args.region)
+			base_url = re.search(r"=> (.*) ", fp.create_api(base_url))[1]
+			fp_id = base_url.replace("https://","").split(".")[0]
+			random_url = '.'.join(str(random.randint(0,255)) for _ in range(4))
+			headers["X-My-X-Forwarded-For"] = random_url
 		else:
-			results = start_from_repo(args.repo,args.proxy,args.fireprox,args.token)
+			fp_id = None
+		if args.user:
+			results = start_from_account(args.user,args.forks,args.proxy,args.token,args.exclude)
+		elif args.domain:
+			results = start_from_domain(args.domain,args.proxy,args.token)
+		else:
+			results = start_from_repo(args.repo,args.proxy,args.token)
 		
 		if len(results) == 0:
 			print("Didn't find any results in public data.")
@@ -182,4 +189,9 @@ Examples:
 		print("Rate Limited :( Wait, connect to a different network, or provide a proxy.")
 	except NotFound:
 		print("Couldn't find the starting object. Check that the user/org/repo exists.")
-	
+	except IncompleteKeys:
+		print("When providing keys, provide both an access key and a secret access key.")
+	except KeyboardInterrupt:
+		print("\nCleaning up...")
+	if fp_id:
+		fp.delete_api(fp_id)
