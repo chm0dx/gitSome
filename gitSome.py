@@ -23,6 +23,7 @@ def process_repo(repo):
 	page = 1
 	results = []
 	repo_url = f"{base_url}repos/{repo}"
+	repo_html_url = f"https://github.com/{repo}"
 	while True:
 		commits_url = f'{repo_url}/commits?per_page=100&page={page}'
 		commits = requests.get(commits_url,proxies=proxies,headers=headers).json()
@@ -34,13 +35,13 @@ def process_repo(repo):
 			raise NotFound()
 		for commit in commits:
 			for subject in ["author","committer"]:
-				result = {"repo":repo,"name":commit["commit"][subject].get("name"),"email":commit["commit"][subject].get("email"),"login":""}
+				result = {"repo":repo_html_url,"name":commit["commit"][subject].get("name"),"email":commit["commit"][subject].get("email"),"login":""}
 				if result.get("name") == "GitHub":
 					continue
 				if "noreply.github.com" in result.get("email"):
 					result["email"] = ""
-				if commit.get(subject) and commit.get(subject).get("login"):
-					result["login"] = commit.get(subject).get("login")
+				if commit.get(subject) and commit.get(subject).get("html_url"):
+					result["login"] = commit.get(subject).get("html_url")
 				if result not in results:
 					results.append(result)
 		if len(commits) == 100:
@@ -67,6 +68,16 @@ def start_from_account(account,forks,proxy,token,exclusions):
 	results = []
 	page = 1 
 	while True:
+		members_url = f"{base_url}orgs/{account}/members"
+		members = requests.get(members_url,proxies=proxies, headers=headers).json()
+		if isinstance(members,list):
+			for member in members:
+				results.append({"login":member.get("html_url"), "repo":""})
+		orgs_url = f"{base_url}users/{account}/orgs"
+		orgs = requests.get(orgs_url,proxies=proxies, headers=headers).json()
+		if isinstance(orgs,list):
+			for org in orgs:
+				results.append({"org":org.get("html_url"), "repo":""})
 		if account:
 			repos_url = f"{base_url}users/{account}/repos?per_page=100&page={page}"
 		repos = requests.get(repos_url,proxies=proxies, headers=headers).json()
@@ -110,16 +121,17 @@ def start_from_domain(domain,proxy,token):
 
 			for search_result in search_results["items"]:
 				if search_field == "users":
+					results.append({"login":search_result["html_url"], "repo":""})
 					user_page_url = f'{base_url}users/{search_result["login"]}'
 					user_page = requests.get(search_url,proxies=proxies, headers=headers).json()
 					for email in re.findall(rf"((?<!\\)[A-Za-z0-9+.]+@[\w]*{domain})",match["fragment"]):
-							result = {"email":email.lower(),"source":search_result["html_url"]}
+							result = {"email":email.lower(),"source":search_result["html_url"], "repo":"/".join(search_result["url"].replace("api.","").replace("repos/","").split("/")[0:5])}
 							if result not in results:
 								results.append(result)
 				else:
 					for match in search_result["text_matches"]:
 						for email in re.findall(rf"((?<!\\)[A-Za-z0-9+.]+@[\w]*{domain})",match["fragment"]):
-							result = {"email":email.lower(),"source":search_result["html_url"]}
+							result = {"email":email.lower(),"source":search_result["html_url"], "repo":"/".join(search_result["url"].replace("api.","").replace("repos/","").split("/")[0:5])}
 							if result not in results:
 								results.append(result)
 			if len(search_results) == 100:
@@ -184,7 +196,21 @@ Examples:
 			print(results)
 		else:
 			emails = [result for result in (set([result.get("email") for result in results if result.get("email")]))]
-			[print(email) for email in sorted(emails, key=lambda x: x.split("@")[-1])]
+			repos = [result for result in (set([result.get("repo") for result in results if result.get("repo")]))]
+			logins = [login for login in (set([result.get("login") for result in results if result.get("login")]))]
+			orgs = [org for org in (set([result.get("org") for result in results if result.get("org")]))]
+			if emails:
+				print(f"Emails ({len(emails)}):")
+				[print(f"\t{email}") for email in sorted(emails, key=lambda x: x.split("@")[-1])]
+			if repos:
+				print(f"Repos ({len(repos)}):")
+				[print(f"\t{repo}") for repo in sorted(repos)]
+			if logins:
+				print(f"Users ({len(logins)}):")
+				[print(f"\t{login}") for login in sorted(logins)]
+			if orgs:
+				print(f"Orgs ({len(orgs)}):")
+				[print(f"\t{org}") for org in sorted(orgs)]
 	except RateLimited:
 		print("Rate Limited :( Wait, connect to a different network, or provide a proxy.")
 	except NotFound:
