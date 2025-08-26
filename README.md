@@ -16,9 +16,9 @@ OSINT tool to extract email addresses and other useful info from various GitHub 
  * Built-in FireProx to automatically create endpoints, rotate source IP, and cleanup at the end
     * Forked and modified ([chm0dx/fireprox](https://github.com/chm0dx/fireprox)) from the awesome [ustayready/fireprox](https://github.com/ustayready/fireprox)
 
-![alt text](./gitSome_demo.gif "Quick Demo")
-
 ![alt text](./gitSome_emails_demo.gif "Emails Demo")
+
+![alt text](./gitSome_demo.gif "Quick Demo")
 
 ## Install
 
