@@ -70,6 +70,8 @@ OSINT tool to extract email addresses and other useful info from various GitHub 
 
 ## The Email Option
 
+Pass in a list of email addresses and return the associated GitHub accounts!
+
 When pushing commits from a git instance, GitHub will analyze the commit's author field and enrich the commit with the GitHub login (user) associated with the email, if it exists. gitSome's -e option automates the process of creating a repo, generating a commit, pushing to GitHub, and analyzing the commit to associate email addresses with corresponding GitHub accounts.
 
 This option requires:
