@@ -7,8 +7,12 @@ import shutil
 import subprocess
 
 from bs4 import BeautifulSoup
-from fireprox import fire
 from pathlib import Path
+
+try:
+    from .fireprox import fire
+except ImportError:
+    from fireprox import fire
 
 
 proxies = {"https":""}
